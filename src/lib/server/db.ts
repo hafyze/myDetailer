@@ -3,7 +3,7 @@ import { MongoClient, ServerApiVersion } from "mongodb";
 
 const DEFAULT_DB_NAME = "mydetailer";
 const DEFAULT_SLOT_CAPACITY = 1;
-const DAILY_SLOT_TIMES = [
+export const DAILY_SLOT_TIMES = [
 	"09:00",
 	"10:00",
 	"11:00",
@@ -139,18 +139,9 @@ export async function ensureServicesSeeded() {
 }
 
 export async function getSlotsForDate(date: string) {
-	const db = await getDb();
-	const bookings = await db
-		.collection("bookings")
-		.find(
-			{ date, status: { $ne: "cancelled" } },
-			{
-				projection: {
-					timeSlot: 1
-				}
-			}
-		)
-		.toArray();
+	const bookings = await getBookingsForDate(date, {
+		timeSlot: 1
+	});
 
 	const bookedCountBySlot = bookings.reduce<Record<string, number>>((acc, booking) => {
 		const timeSlot =
@@ -169,4 +160,60 @@ export async function getSlotsForDate(date: string) {
 		time,
 		available: (bookedCountBySlot[time] || 0) < DEFAULT_SLOT_CAPACITY
 	}));
+}
+
+export async function getBookingsForDate(date: string, projection: Record<string, 1> = {}) {
+	const db = await getDb();
+
+	return db
+		.collection("bookings")
+		.find(
+			{ date, status: { $ne: "cancelled" } },
+			{
+				projection
+			}
+		)
+		.toArray();
+}
+
+export async function getScheduleForDate(date: string) {
+	const bookings = await getBookingsForDate(date, {
+		customerName: 1,
+		customerPhone: 1,
+		vehicle: 1,
+		service: 1,
+		timeSlot: 1,
+		paymentMethod: 1,
+		paymentStatus: 1,
+		status: 1
+	});
+
+	const bookingsBySlot = new Map<string, Record<string, any>>();
+
+	for (const booking of bookings) {
+		if (typeof booking.timeSlot === "string" && !bookingsBySlot.has(booking.timeSlot)) {
+			bookingsBySlot.set(booking.timeSlot, booking);
+		}
+	}
+
+	return DAILY_SLOT_TIMES.map((time) => {
+		const booking = bookingsBySlot.get(time);
+
+		return {
+			time,
+			available: !booking,
+			booking: booking
+				? serializeDocument({
+						id: booking._id,
+						customerName: booking.customerName || null,
+						customerPhone: booking.customerPhone || null,
+						vehicle: booking.vehicle || null,
+						service: booking.service || null,
+						paymentMethod: booking.paymentMethod || null,
+						paymentStatus: booking.paymentStatus || null,
+						status: booking.status || null
+					})
+				: null
+		};
+	});
 }
