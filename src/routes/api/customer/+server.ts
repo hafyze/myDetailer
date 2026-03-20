@@ -1,26 +1,28 @@
-import { json } from '@sveltejs/kit';
-import { customers } from '$lib/server/db.js';
+import { json } from "@sveltejs/kit";
+import { findCustomerByPhone, normalizePhone, serializeDocument } from "$lib/server/db";
 
 export async function GET({ url }) {
-	const phone = url.searchParams.get('phone');
+	const phone = normalizePhone(url.searchParams.get("phone"));
 
 	if (!phone) {
-		return json({ error: 'Phone is required' }, { status: 400 });
+		return json({ message: "phone is required" }, { status: 400 });
 	}
 
-	// Check if customer exists
-	let customer = customers.find(c => c.phone === phone);
+	const customer = await findCustomerByPhone(phone);
 
-	// If not, create one
 	if (!customer) {
-		customer = {
+		return json({
 			phone,
-			name: '',
+			name: "",
 			vehicles: []
-		};
-
-		customers.push(customer);
+		});
 	}
 
-	return json(customer);
+	return json(
+		serializeDocument({
+			...customer,
+			phone,
+			vehicles: Array.isArray(customer.vehicles) ? customer.vehicles : []
+		})
+	);
 }

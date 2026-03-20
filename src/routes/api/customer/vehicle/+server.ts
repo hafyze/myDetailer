@@ -1,29 +1,69 @@
-import { json } from '@sveltejs/kit';
-import { customers } from '$lib/server/db';
+import { json } from "@sveltejs/kit";
+import {
+	createVehicleId,
+	findCustomerByPhone,
+	getDb,
+	normalizePhone,
+	serializeDocument
+} from "$lib/server/db";
 
 export async function POST({ request }) {
-	const { phone, vehicle } = await request.json();
+	const { phone: rawPhone, name: rawName, vehicle: rawVehicle } = await request.json();
+	const phone = normalizePhone(rawPhone);
+	const name = typeof rawName === "string" ? rawName.trim() : "";
+	const brand = typeof rawVehicle?.brand === "string" ? rawVehicle.brand.trim() : "";
+	const model = typeof rawVehicle?.model === "string" ? rawVehicle.model.trim() : "";
+	const plate = typeof rawVehicle?.plate === "string" ? rawVehicle.plate.trim() : "";
 
-	if (!phone || !vehicle) {
-		return json({ error: "Missing data" }, { status: 400 });
+	if (!phone || !brand || !model || !plate) {
+		return json({ message: "Phone, brand, model, and plate are required." }, { status: 400 });
 	}
 
-	// find customer
-	let customer = customers.find(c => c.phone === phone);
+	const db = await getDb();
+	const customers = db.collection("customers");
+	const existingCustomer = await findCustomerByPhone(phone);
+	const existingVehicles = Array.isArray(existingCustomer?.vehicles) ? existingCustomer.vehicles : [];
+	const normalizedPlate = plate.toUpperCase();
+	const duplicateVehicle = existingVehicles.find(
+		(vehicle) => typeof vehicle?.plate === "string" && vehicle.plate.toUpperCase() === normalizedPlate
+	);
 
-	if (!customer) {
-		customer = {
-			phone,
-			vehicles: []
+	const vehicle =
+		duplicateVehicle || {
+			id: createVehicleId(),
+			brand,
+			model,
+			plate,
+			createdAt: new Date().toISOString()
 		};
-		customers.push(customer);
-	}
 
-	// add vehicle
-	customer.vehicles.push({
-		id: crypto.randomUUID(),
-		...vehicle
-	});
+	const now = new Date();
+	const nextVehicles = duplicateVehicle ? existingVehicles : [...existingVehicles, vehicle];
+	const customerIdFilter = existingCustomer ? { _id: existingCustomer._id } : { phone };
 
-	return json({ success: true, vehicles: customer.vehicles });
+	await customers.updateOne(
+		customerIdFilter,
+		{
+			$set: {
+				phone,
+				vehicles: nextVehicles,
+				updatedAt: now,
+				...(name ? { name } : {})
+			},
+			$setOnInsert: {
+				createdAt: now
+			}
+		},
+		{ upsert: true }
+	);
+
+	const updatedCustomer = await findCustomerByPhone(phone);
+
+	return json(
+		serializeDocument({
+			...updatedCustomer,
+			phone,
+			vehicles: Array.isArray(updatedCustomer?.vehicles) ? updatedCustomer.vehicles : []
+		})
+	);
 }

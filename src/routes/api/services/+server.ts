@@ -1,29 +1,9 @@
-import { json } from '@sveltejs/kit';
-
-const services = [
-	{
-		_id: "svc001",
-		name: "Premium Wash",
-		price: 35,
-		duration: 45,
-		description: "Exterior wash + interior vacuum"
-	},
-	{
-		_id: "svc002",
-		name: "Full Detail",
-		price: 120,
-		duration: 120,
-		description: "Deep cleaning + polish"
-	},
-	{
-		_id: "svc003",
-		name: "Wax Protection",
-		price: 80,
-		duration: 60,
-		description: "Adds shine and protection"
-	}
-];
+import { json } from "@sveltejs/kit";
+import { ensureServicesSeeded, serializeDocument } from "$lib/server/db";
 
 export async function GET() {
-	return json(services);
+	const services = await ensureServicesSeeded();
+	const allServices = await services.find({}, { sort: { price: 1, name: 1 } }).toArray();
+
+	return json(serializeDocument(allServices));
 }

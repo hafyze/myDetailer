@@ -5,21 +5,27 @@
 	import { goto } from "$app/navigation";
     import { booking } from "$lib/stores/booking";
     
-    let data:any;
+    let data = $state<any>(null);
 
     booking.subscribe(value => {
         data = value;
     });
 
-	let loading = false;
+	let loading = $state(false);
+	let error = $state("");
 
 	async function confirmBooking() {
 		loading = true;
+		error = "";
 
 		try {
-			await fetch("/api/payment", { method: "POST" });
+			const paymentResponse = await fetch("/api/payment", { method: "POST" });
 
-			await fetch("/api/bookings", {
+			if (!paymentResponse.ok) {
+				throw new Error("Payment step failed.");
+			}
+
+			const bookingResponse = await fetch("/api/bookings", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json"
@@ -34,11 +40,17 @@
 				})
 			});
 
+			if (!bookingResponse.ok) {
+				const responseBody = await bookingResponse.json().catch(() => null);
+				throw new Error(responseBody?.message || "Booking creation failed.");
+			}
+
 			booking.reset();
 
 			goto("/booking/success");
 		} catch (err) {
 			console.error(err);
+			error = err instanceof Error ? err.message : "Unable to confirm booking right now.";
 		} finally {
 			loading = false;
 		}
@@ -90,6 +102,10 @@
 				<p class="font-medium">Total</p>
 				<p class="font-semibold">RM {data.service?.price}</p>
 			</div>
+
+			{#if error}
+				<p class="text-sm text-red-500">{error}</p>
+			{/if}
 
 			<Button
 				class="w-full mt-4"

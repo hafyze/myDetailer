@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { Button } from "$lib/components/ui/button";
-	import { Card, CardContent } from "$lib/components/ui/card";
 	import { goto } from "$app/navigation";
-    import Label from "$lib/components/ui/label/label.svelte";
-    import { booking } from "$lib/stores/booking";
-  import Input from "$lib/components/ui/input/input.svelte";
+	import Label from "$lib/components/ui/label/label.svelte";
+	import Input from "$lib/components/ui/input/input.svelte";
+	import { booking } from "$lib/stores/booking";
 
 	let selectedDate = $state("");
-	let selectedSlot = $state<any>(null);
+	let selectedSlot = $state<string | null>(null);
 	let slots = $state<any[]>([]);
 	let loading = $state(false);
 
@@ -20,6 +19,7 @@
 		try {
 			const res = await fetch(`/api/slots?date=${selectedDate}`);
 			slots = await res.json();
+			console.log(slots)
 		} catch (err) {
 			console.error(err);
 		} finally {
@@ -28,48 +28,54 @@
 	}
 
 	function handleContinue() {
-        if (!selectedSlot) return;
+		if (!selectedSlot) return;
 
-        booking.setSlot(selectedDate, selectedSlot);
-
-        goto("/booking/confirm");
-    }
+		booking.setSlot(selectedDate, selectedSlot);
+		goto("/booking/confirm");
+	}
 </script>
 
-<div class="max-w-md mx-auto mt-10 space-y-4">
+<div class="max-w-md mx-auto mt-10 space-y-5">
 
 	<h2 class="text-xl font-semibold">Select Time Slot</h2>
 
+	<!-- Date Picker -->
 	<div class="space-y-2">
 		<Label class="text-sm">Choose Date</Label>
 		<Input
 			type="date"
-			class="w-full border rounded-md px-3 py-2 bg-background"
 			bind:value={selectedDate}
-			onchange={fetchSlots}
+			oninput={fetchSlots}
 		/>
 	</div>
 
+	<!-- Loading -->
 	{#if loading}
-		<p class="text-sm text-muted-foreground">Loading slots...</p>
+		<p class="text-sm text-muted-foreground">
+			Loading slots...
+		</p>
 	{/if}
 
-	<div class="grid grid-cols-3 gap-2">
-		{#each slots as slot}
-			<Button
-				variant={slot.available ? "default" : "secondary"}
-				disabled={!slot.available}
-				class={`text-sm ${
-					selectedSlot === slot.time
-						? "ring-2 ring-primary"
-						: ""
-				}`}
-				onclick={() => selectedSlot = slot.time}
-			>
-				{slot.time}
-			</Button>
-		{/each}
-	</div>
+	<!-- Slots -->
+	{#if slots.length > 0}
+		<div class="grid grid-cols-3 gap-3">
+			{#each slots as slot}
+				<Button
+					type="button"
+					variant={slot.available ? "outline" : "secondary"}
+					disabled={!slot.available}
+					onclick={() => selectedSlot = slot.time}
+					class={`h-12 text-sm transition ${
+						selectedSlot === slot.time
+							? "ring-2 ring-primary border-primary"
+							: ""
+					}`}
+				>
+					{slot.time}
+				</Button>
+			{/each}
+		</div>
+	{/if}
 
 	<!-- Continue -->
 	<Button

@@ -5,7 +5,8 @@
 	import { goto } from "$app/navigation";
 	import { booking } from "$lib/stores/booking";
 
-	let customer = JSON.parse(localStorage.getItem("customer") || "{}");
+	let data = $state<any>(null);
+	booking.subscribe(v => data = v)
 
 	let selectedVehicle = $state<any>(null);
 
@@ -24,9 +25,9 @@
 
 	<h2 class="text-xl font-semibold">Select Your Vehicle</h2>
 
-	{#if customer?.vehicles?.length}
+	{#if data?.customer?.vehicles?.length}
 		<div class="space-y-3">
-			{#each customer.vehicles as vehicle (vehicle.id)}
+			{#each data.customer.vehicles as vehicle (vehicle.id)}
 				<Button
 					type="button"
 					onclick={() => selectVehicle(vehicle)}

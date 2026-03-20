@@ -10,9 +10,21 @@
 	import { goto } from "$app/navigation";
 
 	let phone = $state("");
-	let name = $state("")
-	let loading = false;
-	let error = "";
+	let name = $state("");
+	let loading = $state(false);
+	let error = $state("");
+	let lookupLoading = $state(false);
+	let lastLookedUpPhone = $state("");
+	let nameWasAutoFilled = $state(false);
+	let customerLookupResult = $state<any>(null);
+
+	function normalizePhone(value: unknown) {
+		if (value === null || value === undefined) {
+			return "";
+		}
+
+		return String(value).trim();
+	}
 
 	const t = $derived((key: string) => {
 		const keys = key.split(".");
@@ -25,17 +37,72 @@
 		return value || key;
 	});
 
-    async function handleContinue() {
-        const res = await fetch(`/api/customer?phone=${phone}`);
-        const data = await res.json();
+	async function lookupCustomerByPhone() {
+		const normalizedPhone = normalizePhone(phone);
 
-        booking.setCustomer({
-			...data,
-			name
-		});
+		if (!normalizedPhone || normalizedPhone === lastLookedUpPhone) {
+			return null;
+		}
 
-        goto("/booking/vehicle");
-    }
+		lookupLoading = true;
+		error = "";
+
+		try {
+			const res = await fetch(`/api/customer?phone=${normalizedPhone}`);
+
+			if (!res.ok) {
+				throw new Error("Failed to load customer");
+			}
+
+			const data = await res.json();
+			lastLookedUpPhone = normalizedPhone;
+			customerLookupResult = data;
+
+			if (data?.name) {
+				name = data.name;
+				nameWasAutoFilled = true;
+			} else if (nameWasAutoFilled) {
+				name = "";
+				nameWasAutoFilled = false;
+			}
+
+			return data;
+		} catch (err) {
+			console.error(err);
+			error = "Unable to check customer details right now.";
+			return null;
+		} finally {
+			lookupLoading = false;
+		}
+	}
+
+	async function handleContinue() {
+		loading = true;
+		error = "";
+
+		try {
+			const normalizedPhone = normalizePhone(phone);
+			const data =
+				(await lookupCustomerByPhone()) ??
+				(lastLookedUpPhone === normalizedPhone ? customerLookupResult : null) ?? {
+					phone: normalizedPhone,
+					name: "",
+					vehicles: []
+				};
+
+			booking.setCustomer({
+				...data,
+				name
+			});
+
+			goto("/booking/vehicle");
+		} catch (err) {
+			console.error(err);
+			error = "Unable to continue right now.";
+		} finally {
+			loading = false;
+		}
+	}
 </script>
 
 <div class="max-w-md mx-auto mt-10">
@@ -54,8 +121,21 @@
 				<Input
 					id="phone"
 					placeholder="0123456789"
-					type="number"
+					type="tel"
+					inputmode="numeric"
+					autocomplete="tel"
 					bind:value={phone}
+					oninput={() => {
+						if (normalizePhone(phone) !== lastLookedUpPhone) {
+							customerLookupResult = null;
+						}
+
+						if (nameWasAutoFilled && normalizePhone(phone) !== lastLookedUpPhone) {
+							name = "";
+							nameWasAutoFilled = false;
+						}
+					}}
+					onchange={lookupCustomerByPhone}
 				/>
 
 				<Label for="phone">{t("booking.name")}</Label>
@@ -63,6 +143,9 @@
 					id="name"
 					placeholder="Full Name"
 					bind:value={name}
+					oninput={() => {
+						nameWasAutoFilled = false;
+					}}
 				/>
 			</div>
 
@@ -73,7 +156,7 @@
 			<Button
 				class="w-full"
 				onclick={handleContinue}
-				disabled={loading}
+				disabled={loading || lookupLoading}
 			>
 				{loading ? t("common.loading") : t("common.continue")}
 			</Button>

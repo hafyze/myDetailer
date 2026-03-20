@@ -1,8 +1,8 @@
-import { json } from '@sveltejs/kit';
+import { json } from "@sveltejs/kit";
 
 export async function POST() {
 	return json({
-		status: "success",
-		id: "DUMMY123"
+		ok: true,
+		status: "mock-paid"
 	});
 }
