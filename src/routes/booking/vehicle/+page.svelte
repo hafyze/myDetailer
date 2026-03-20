@@ -30,19 +30,26 @@
 			{#each data.customer.vehicles as vehicle (vehicle.id)}
 				<Button
 					type="button"
+					variant="outline"
 					onclick={() => selectVehicle(vehicle)}
-					class={`w-full h-auto p-4 rounded-xl border transition flex items-center justify-between ${
+					class={`group w-full h-auto p-4 rounded-xl transition flex items-center justify-between ${
 						selectedVehicle?.id === vehicle.id
-							? "border-primary ring-2 ring-primary bg-accent"
+							? "border-primary ring-2 ring-primary bg-accent text-accent-foreground"
 							: "hover:bg-accent/50"
 					}`}
 				>
 					<!-- LEFT: Vehicle Info -->
 					<div class="flex flex-col items-start text-left">
 						<p class="font-medium text-base">
-							{vehicle.model}
+							{vehicle.brand} {vehicle.model}
 						</p>
-						<p class="text-sm text-muted-foreground">
+						<p
+							class={`text-sm ${
+								selectedVehicle?.id === vehicle.id
+									? "text-accent-foreground/80"
+									: "text-muted-foreground group-hover:text-accent-foreground/80"
+							}`}
+						>
 							{vehicle.plate}
 						</p>
 					</div>

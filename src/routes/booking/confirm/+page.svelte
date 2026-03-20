@@ -11,49 +11,11 @@
         data = value;
     });
 
-	let loading = $state(false);
-	let error = $state("");
-
-	async function confirmBooking() {
-		loading = true;
-		error = "";
-
-		try {
-			const paymentResponse = await fetch("/api/payment", { method: "POST" });
-
-			if (!paymentResponse.ok) {
-				throw new Error("Payment step failed.");
-			}
-
-			const bookingResponse = await fetch("/api/bookings", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json"
-				},
-				body: JSON.stringify({
-					customerName: data.customer?.name,
-					customerPhone: data.customer?.phone,
-					vehicle: data.vehicle,
-					service: data.service,
-					date: data.date,
-					timeSlot: data.slot
-				})
-			});
-
-			if (!bookingResponse.ok) {
-				const responseBody = await bookingResponse.json().catch(() => null);
-				throw new Error(responseBody?.message || "Booking creation failed.");
-			}
-
-			booking.reset();
-
-			goto("/booking/success");
-		} catch (err) {
-			console.error(err);
-			error = err instanceof Error ? err.message : "Unable to confirm booking right now.";
-		} finally {
-			loading = false;
+	function proceedToPayment() {
+		if (!data.payment?.method) {
+			booking.setPaymentMethod("online_transfer");
 		}
+		goto("/booking/payment");
 	}
 </script>
 
@@ -103,16 +65,11 @@
 				<p class="font-semibold">RM {data.service?.price}</p>
 			</div>
 
-			{#if error}
-				<p class="text-sm text-red-500">{error}</p>
-			{/if}
-
 			<Button
 				class="w-full mt-4"
-				onclick={confirmBooking}
-				disabled={loading}
+				onclick={proceedToPayment}
 			>
-				{loading ? "Processing..." : "Confirm Booking"}
+				Proceed To Payment
 			</Button>
 
 		</CardContent>

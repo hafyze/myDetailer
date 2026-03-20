@@ -49,6 +49,10 @@ export async function POST({ request }) {
 		date: body.date,
 		timeSlot: body.timeSlot,
 		status: "confirmed",
+		paymentMethod: body.paymentMethod || null,
+		paymentStatus: body.paymentStatus || null,
+		paymentTransactionId: body.paymentTransactionId || null,
+		paidAt: body.paidAt || null,
 		createdAt: now,
 		updatedAt: now
 	});
@@ -65,6 +69,10 @@ export async function POST({ request }) {
 			date: body.date,
 			timeSlot: body.timeSlot,
 			status: "confirmed",
+			paymentMethod: body.paymentMethod || null,
+			paymentStatus: body.paymentStatus || null,
+			paymentTransactionId: body.paymentTransactionId || null,
+			paidAt: body.paidAt || null,
 			createdAt: now,
 			updatedAt: now
 		})
