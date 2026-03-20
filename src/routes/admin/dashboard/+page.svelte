@@ -55,6 +55,13 @@
 		{ value: "this_month", label: "This Month" }
 	] as const;
 
+	const trendSortOptions = [
+		{ value: "newest", label: "Newest First" },
+		{ value: "oldest", label: "Oldest First" },
+		{ value: "highest", label: "Highest Revenue" },
+		{ value: "lowest", label: "Lowest Revenue" }
+	] as const;
+
 	function getTodayDateString() {
 		const now = new Date();
 		const year = now.getFullYear();
@@ -72,6 +79,7 @@
 	let revenueData = $state<RevenueData | null>(null);
 	let scheduleData = $state<ScheduleData | null>(null);
 	let actionLoadingId = $state("");
+	let trendSort = $state<(typeof trendSortOptions)[number]["value"]>("newest");
 
 	onMount(async () => {
 		await Promise.all([loadRevenue(), loadSchedule()]);
@@ -132,6 +140,24 @@
 	const maxTrendRevenue = $derived(
 		Math.max(...(revenueData?.trend.map((entry) => entry.revenue) || [0]), 1)
 	);
+
+	const sortedTrend = $derived.by(() => {
+		const trend = [...(revenueData?.trend || [])];
+
+		if (trendSort === "oldest") {
+			return trend.sort((a, b) => a.date.localeCompare(b.date));
+		}
+
+		if (trendSort === "highest") {
+			return trend.sort((a, b) => b.revenue - a.revenue || a.date.localeCompare(b.date));
+		}
+
+		if (trendSort === "lowest") {
+			return trend.sort((a, b) => a.revenue - b.revenue || a.date.localeCompare(b.date));
+		}
+
+		return trend.sort((a, b) => b.date.localeCompare(a.date));
+	});
 
 	async function loadRevenue() {
 		revenueLoading = true;
@@ -237,9 +263,25 @@
 
 			<div class="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
 				<Card>
-					<CardHeader><CardTitle>Revenue Trend</CardTitle></CardHeader>
+					<CardHeader class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+						<CardTitle>Revenue Trend</CardTitle>
+						<div class="flex flex-wrap gap-2">
+							{#each trendSortOptions as option}
+								<Button
+									type="button"
+									size="sm"
+									variant={trendSort === option.value ? "default" : "outline"}
+									onclick={() => {
+										trendSort = option.value;
+									}}
+								>
+									{option.label}
+								</Button>
+							{/each}
+						</div>
+					</CardHeader>
 					<CardContent class="space-y-3">
-						{#each revenueData.trend as point}
+						{#each sortedTrend as point}
 							<div class="grid grid-cols-[92px_1fr_auto] items-center gap-3">
 								<p class="text-sm text-muted-foreground">{point.date}</p>
 								<div class="h-3 rounded-full bg-muted overflow-hidden">
