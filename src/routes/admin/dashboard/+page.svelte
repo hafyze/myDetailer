@@ -55,8 +55,16 @@
 		{ value: "this_month", label: "This Month" }
 	] as const;
 
+	function getTodayDateString() {
+		const now = new Date();
+		const year = now.getFullYear();
+		const month = String(now.getMonth() + 1).padStart(2, "0");
+		const day = String(now.getDate()).padStart(2, "0");
+		return `${year}-${month}-${day}`;
+	}
+
 	let selectedRange = $state<(typeof rangeOptions)[number]["value"]>("30d");
-	let selectedDate = $state(new Date().toISOString().slice(0, 10));
+	let selectedDate = $state(getTodayDateString());
 	let revenueLoading = $state(true);
 	let scheduleLoading = $state(true);
 	let revenueError = $state("");
