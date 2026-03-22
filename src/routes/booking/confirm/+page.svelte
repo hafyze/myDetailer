@@ -66,7 +66,15 @@
 			</div>
 
 			<Button
+				variant="outline"
 				class="w-full mt-4"
+				onclick={() => goto("/booking/slot")}
+			>
+				Back
+			</Button>
+
+			<Button
+				class="w-full"
 				onclick={proceedToPayment}
 			>
 				Proceed To Payment

@@ -23,7 +23,18 @@
 			return "";
 		}
 
-		return String(value).trim();
+		let phone = String(value).trim();
+		phone = phone.replace(/[\s-]/g, "");
+
+		if (phone.startsWith("+60")) {
+			phone = "0" + phone.slice(3)
+		}else if (phone.startsWith("60")) {
+			phone = "0" + phone.slice(2)
+		}else if (!phone.startsWith("0")) {
+			phone = "0" + phone
+		}
+
+		return phone
 	}
 
 	const t = $derived((key: string) => {

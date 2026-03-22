@@ -58,9 +58,14 @@
 				<Input bind:value={plate} />
 			</div>
 
-			<Button class="w-full" onclick={saveVehicle}>
+			<div class="grid grid-cols-2 gap-3">
+				<Button variant="outline" class="w-full" onclick={() => goto("/booking/vehicle")}>
+					Back
+				</Button>
+				<Button variant="success" class="w-full" onclick={saveVehicle}>
 				Save & Continue
-			</Button>
+				</Button>
+			</div>
 
 		</CardContent>
 	</Card>

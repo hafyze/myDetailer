@@ -3,12 +3,19 @@
 	import { Button } from "$lib/components/ui/button";
 	import { Checkbox } from "$lib/components/ui/checkbox";
 	import { goto } from "$app/navigation";
+	import { onMount } from "svelte";
 	import { booking } from "$lib/stores/booking";
 
 	let data = $state<any>(null);
 	booking.subscribe(v => data = v)
 
 	let selectedVehicle = $state<any>(null);
+
+	onMount(() => {
+		if (data?.vehicle) {
+			selectedVehicle = data.vehicle;
+		}
+	});
 
 	function selectVehicle(vehicle: any) {
 		selectedVehicle = vehicle;
@@ -63,9 +70,14 @@
 		</div>
 	{/if}
 
-	<Button variant="outline" class="w-full" onclick={() => goto("/booking/vehicle/new")}>
+	<div class="grid grid-cols-2 gap-3">
+		<Button variant="outline" class="w-full" onclick={() => goto("/booking")}>
+			Back
+		</Button>
+		<Button variant="success" class="w-full" onclick={() => goto("/booking/vehicle/new")}>
 		+ Add New Vehicle
-	</Button>
+		</Button>
+	</div>
 
 	<Button class="w-full" disabled={!selectedVehicle} onclick={handleContinue}>
 		Continue

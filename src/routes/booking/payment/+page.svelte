@@ -295,7 +295,7 @@
 				<Button type="button" variant="outline" onclick={() => goto("/booking/confirm")} disabled={loading}>
 					Back
 				</Button>
-				<Button type="button" onclick={submitPayment} disabled={loading}>
+				<Button type="button" variant="success" onclick={submitPayment} disabled={loading}>
 					{loading ? "Processing..." : `Pay RM ${data?.service?.price ?? 0}`}
 				</Button>
 			</div>

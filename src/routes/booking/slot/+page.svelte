@@ -1,20 +1,37 @@
 <script lang="ts">
 	import { Button } from "$lib/components/ui/button";
 	import { goto } from "$app/navigation";
+	import { onMount } from "svelte";
 	import Label from "$lib/components/ui/label/label.svelte";
 	import Input from "$lib/components/ui/input/input.svelte";
 	import { booking } from "$lib/stores/booking";
 
+	let data = $state<any>(null);
 	let selectedDate = $state("");
 	let selectedSlot = $state<string | null>(null);
 	let slots = $state<any[]>([]);
 	let loading = $state(false);
 
-	async function fetchSlots() {
+	booking.subscribe((value) => {
+		data = value;
+	});
+
+	onMount(async () => {
+		if (data?.date) {
+			selectedDate = data.date;
+			selectedSlot = data.slot;
+			await fetchSlots(true);
+		}
+	});
+
+	async function fetchSlots(preserveSelectedSlot = false) {
 		if (!selectedDate) return;
 
 		loading = true;
-		selectedSlot = null;
+
+		if (!preserveSelectedSlot) {
+			selectedSlot = null;
+		}
 
 		try {
 			const res = await fetch(`/api/slots?date=${selectedDate}`);
@@ -45,7 +62,7 @@
 		<Input
 			type="date"
 			bind:value={selectedDate}
-			oninput={fetchSlots}
+			oninput={() => fetchSlots()}
 		/>
 	</div>
 
@@ -79,7 +96,14 @@
 
 	<!-- Continue -->
 	<Button
+		variant="outline"
 		class="w-full mt-4"
+		onclick={() => goto("/booking/service")}
+	>
+		Back
+	</Button>
+	<Button
+		class="w-full"
 		disabled={!selectedSlot}
 		onclick={handleContinue}
 	>

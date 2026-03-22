@@ -8,6 +8,7 @@
 		variants: {
 			variant: {
 				default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs",
+				success: "bg-green-600 text-white hover:bg-green-700 shadow-xs",
 				destructive:
 					"bg-destructive hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 text-white shadow-xs",
 				outline:

@@ -394,7 +394,7 @@
 									<Button
 										type="button"
 										size="sm"
-										variant="outline"
+										variant="success"
 										disabled={actionLoadingId !== "" || currentBooking.status === "confirmed"}
 										onclick={() => updateBookingStatus(currentBooking.id, "confirmed")}
 									>
@@ -403,7 +403,7 @@
 									<Button
 										type="button"
 										size="sm"
-										variant="outline"
+										variant="success"
 										disabled={actionLoadingId !== "" || currentBooking.status === "completed"}
 										onclick={() => updateBookingStatus(currentBooking.id, "completed")}
 									>
@@ -412,7 +412,7 @@
 									<Button
 										type="button"
 										size="sm"
-										variant="outline"
+										variant="destructive"
 										disabled={actionLoadingId !== "" || currentBooking.status === "cancelled"}
 										onclick={() => updateBookingStatus(currentBooking.id, "cancelled")}
 									>
