@@ -9,6 +9,7 @@
   	import CheckCircle2 from "@lucide/svelte/icons/check-circle-2";
 	import AlertCircle from "@lucide/svelte/icons/alert-circle";
 	import Trash2 from "@lucide/svelte/icons/trash-2";
+  	import * as AlertDialog  from "$lib/components/ui/alert-dialog/index";
 
 	let data = $state<any>(null);
 	booking.subscribe(v => data = v)
@@ -17,6 +18,8 @@
 
 	let alertMessage = $state("");
 	let alertType = $state<"success" | "error" | null> (null);
+	let deleteTarget = $state<any>(null);
+	let deleteOpen = $state(false)
 
 	onMount(() => {
 		if (data?.vehicle) {
@@ -29,36 +32,36 @@
 		booking.setVehicle(vehicle);
 	}
 
-	async function deleteVehicle(vehicle: any) {
-		const confirmDelete = confirm(
-			`Delete ${vehicle.brand} ${vehicle.model}?`
-		);
-		if (!confirmDelete) return;
+	async function confirmDelete() {
+		if (!deleteTarget) return;
+
+		const vehicleToDelete = deleteTarget
 
 		try {
-			const res = await fetch(`/api/vehicle/${vehicle.id}`, {
+			const res = await fetch(`/api/vehicle/${vehicleToDelete.id}`, {
 				method: "DELETE"
-			})
-
-			if(!res.ok) {
-				throw new Error("Failed to delete vehicle")
-			}
+			});
+			deleteOpen = false;
+			deleteTarget = null;
+			if (!res.ok) throw new Error("Failed");
 
 			const updatedCustomer = await res.json();
+
 			booking.setCustomer(updatedCustomer);
 			data = {
 				...data,
 				customer: updatedCustomer
 			};
 
-			if (selectedVehicle?.id === vehicle.id) {
+			if (selectedVehicle?.id === vehicleToDelete.id) {
 				selectedVehicle = null;
 				booking.setVehicle(null);
 			}
 
 			alertType = "success";
 			alertMessage = "Vehicle deleted successfully.";
-		}catch (err) {
+
+		} catch (err) {
 			console.error(err);
 			alertType = "error";
 			alertMessage = "Failed to delete vehicle.";
@@ -133,7 +136,8 @@
 							class="text-red-500 hover:text-red-600"
 							onclick={(e) => {
 								e.stopPropagation();
-								deleteVehicle(vehicle);
+								deleteTarget = vehicle;
+								deleteOpen = true;
 							}}>
 							<Trash2 class="w-4 h-4" />
 						</Button>
@@ -144,7 +148,7 @@
 		</div>
 	{/if}
 
-	<div class="grid grid-cols-3 gap-3">
+	<div class="grid grid-cols-2 gap-3">
 		<Button variant="outline" class="w-full" onclick={() => goto("/booking")}>
 			Back
 		</Button>
@@ -158,3 +162,35 @@
 	</Button>
 
 </div>
+
+<!-- Alert Dialog for Delete Vehicle -->
+
+<AlertDialog.Root bind:open={deleteOpen}>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>
+				Delete Vehicle?
+			</AlertDialog.Title>
+
+			<AlertDialog.Description>
+				Are you sure you want to delete 
+				<strong>
+					{deleteTarget?.brand} {deleteTarget?.model} {deleteTarget?.plate}
+				</strong>? This action cannot be undone.
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+
+		<AlertDialog.Footer>
+			<AlertDialog.Cancel>
+				Cancel
+			</AlertDialog.Cancel>
+
+			<AlertDialog.Action
+				class="bg-red-500 hover:bg-red-600 text-white"
+				onclick={confirmDelete}
+			>
+				Delete
+			</AlertDialog.Action>
+		</AlertDialog.Footer>
+	</AlertDialog.Content>
+</AlertDialog.Root>
