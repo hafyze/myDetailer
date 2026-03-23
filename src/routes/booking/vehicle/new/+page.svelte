@@ -13,6 +13,11 @@
 	let model = $state("");
 	let plate = $state("");
 
+	function normalizePlate(value: string) {
+		if (!value) return "";
+		return value.toUpperCase().replace(/[^A-Z0-9]/g, "")
+	}
+
 	async function saveVehicle() {
 		await fetch("/api/customer/vehicle", {
 			method: "POST",
@@ -43,19 +48,26 @@
 
 		<CardContent class="space-y-4">
 
-			<div>
+			<div class="space-y-2">
 				<Label>Brand</Label>
-				<Input bind:value={brand} />
+				<Input placeholder="Perodua..." class="placeholder:italic placeholder:text-muted-foreground"
+					bind:value={brand} 
+				/>
 			</div>
 
-			<div>
+			<div class="space-y-2">
 				<Label>Model</Label>
-				<Input bind:value={model} />
+				<Input placeholder="Myvi..." class="placeholder:italic placeholder:text-muted-foreground"
+				 	bind:value={model} 
+				/>
 			</div>
 
-			<div>
-				<Label>Plate</Label>
-				<Input bind:value={plate} />
+			<div class="space-y-2">
+				<Label>Car Plate Number</Label>
+				<Input placeholder="ABC123..." class="placeholder:italic placeholder:text-muted-foreground" 
+					bind:value={plate} 
+					oninput={() => {plate = normalizePlate(plate)}}
+				/>
 			</div>
 
 			<div class="grid grid-cols-2 gap-3">
